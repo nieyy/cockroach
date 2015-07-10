@@ -151,7 +151,7 @@ func TestEvalExpr(t *testing.T) {
 		{`CASE WHEN false THEN 1 WHEN false THEN 2 END`, `NULL`, nil},
 	}
 	for i, d := range testData {
-		q, err := parser.Parse("SELECT " + d.expr)
+		q, _, err := parser.Parse("SELECT " + d.expr)
 		if err != nil {
 			t.Fatalf("%d: %v: %s", i, err, d.expr)
 		}
@@ -178,7 +178,7 @@ func TestEvalExprError(t *testing.T) {
 		// {`~0 + 1`, `0`, nil},
 	}
 	for i, d := range testData {
-		q, err := parser.Parse("SELECT " + d.expr)
+		q, _, err := parser.Parse("SELECT " + d.expr)
 		if err != nil {
 			t.Fatalf("%d: %v: %s", i, err, d.expr)
 		}

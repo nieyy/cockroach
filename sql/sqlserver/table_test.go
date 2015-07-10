@@ -111,7 +111,7 @@ func TestMakeTableDescColumns(t *testing.T) {
 		},
 	}
 	for i, d := range testData {
-		stmt, err := parser.Parse("CREATE TABLE test (a " + d.sqlType + ")")
+		stmt, _, err := parser.Parse("CREATE TABLE test (a " + d.sqlType + ")")
 		if err != nil {
 			t.Fatalf("%d: %v", i, err)
 		}
@@ -177,7 +177,7 @@ func TestMakeTableDescIndexes(t *testing.T) {
 		},
 	}
 	for i, d := range testData {
-		stmt, err := parser.Parse("CREATE TABLE test (" + d.sql + ")")
+		stmt, _, err := parser.Parse("CREATE TABLE test (" + d.sql + ")")
 		if err != nil {
 			t.Fatalf("%d: %v", i, err)
 		}

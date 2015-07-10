@@ -22,14 +22,14 @@ import (
 // consolidate a set of types, define the function as typeName().
 // This will help avoid name collisions.
 
-// Parse parses the sql and returns a Statement, which is the AST
-// representation of the query.
-func Parse(sql string) (Statement, error) {
+// Parse parses the sql and returns a Statement and the number of
+// variables. The Statement is the AST representation of the query.
+func Parse(sql string) (Statement, int, error) {
 	tokenizer := newStringTokenizer(sql)
 	if yyParse(tokenizer) != 0 {
-		return nil, errors.New(tokenizer.lastError)
+		return nil, -1, errors.New(tokenizer.lastError)
 	}
-	return tokenizer.parseTree, nil
+	return tokenizer.parseTree, tokenizer.posVarIndex, nil
 }
 
 // Statement represents a statement.

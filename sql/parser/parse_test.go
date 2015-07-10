@@ -67,7 +67,7 @@ func TestParse(t *testing.T) {
 		if tcase.output == "" {
 			tcase.output = tcase.input
 		}
-		tree, err := Parse(tcase.input)
+		tree, _, err := Parse(tcase.input)
 		var out string
 		if err != nil {
 			out = err.Error()

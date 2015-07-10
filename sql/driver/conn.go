@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -69,8 +70,33 @@ func (c *conn) Exec(stmt string, args []driver.Value) (driver.Result, error) {
 }
 
 func (c *conn) Query(stmt string, args []driver.Value) (*rows, error) {
-	// TODO(vivek): Add the args to the Call.
-	return c.send(sqlwire.Call{Args: &sqlwire.Request{RequestHeader: sqlwire.RequestHeader{Session: c.session}, Sql: stmt}, Reply: &sqlwire.Response{}})
+	var params []sqlwire.Datum
+	for _, arg := range args {
+		if arg == nil {
+			return nil, errors.New("Passed in a nil parameter")
+		}
+		var param sqlwire.Datum
+		switch value := arg.(type) {
+		case int64:
+			param.IntVal = &value
+		case float64:
+			param.FloatVal = &value
+		case bool:
+			param.BoolVal = &value
+		case []byte:
+			param.BytesVal = value
+		case string:
+			param.StringVal = &value
+		case time.Time:
+			time, err := value.MarshalBinary()
+			if err != nil {
+				return nil, err
+			}
+			param.BytesVal = time
+		}
+		params = append(params, param)
+	}
+	return c.send(sqlwire.Call{Args: &sqlwire.Request{RequestHeader: sqlwire.RequestHeader{Session: c.session}, Sql: stmt, Params: params}, Reply: &sqlwire.Response{}})
 }
 
 // Send sends the call to the server.

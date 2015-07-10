@@ -130,9 +130,13 @@ func (s *Server) exec(call sqlwire.Call) {
 			return
 		}
 	}
-	stmt, err := parser.Parse(req.Sql)
+	stmt, numVars, err := parser.Parse(req.Sql)
 	if err != nil {
 		resp.SetGoError(err)
+		return
+	}
+	if numVars != len(req.Params) {
+		resp.SetGoError(fmt.Errorf("Incorrect number of parameters: %d; expected: %d", len(req.Params), numVars))
 		return
 	}
 	switch p := stmt.(type) {
@@ -436,7 +440,7 @@ func (s *Server) Insert(session *Session, p *parser.Insert, args []sqlwire.Datum
 
 	// Transform the values into a rows object. This expands SELECT statements or
 	// generates rows from the values contained within the query.
-	r, err := s.processInsertRows(p.Rows)
+	r, err := s.processInsertRows(p.Rows, args)
 	if err != nil {
 		resp.SetGoError(err)
 		return
@@ -670,7 +674,7 @@ func (s *Server) processColumns(desc *structured.TableDescriptor,
 	return cols, nil
 }
 
-func (s *Server) processInsertRows(node parser.InsertRows) (rows []sqlwire.Result_Row, err error) {
+func (s *Server) processInsertRows(node parser.InsertRows, args []sqlwire.Datum) (rows []sqlwire.Result_Row, err error) {
 	switch nt := node.(type) {
 	case parser.Values:
 		for _, row := range nt {
@@ -686,7 +690,15 @@ func (s *Server) processInsertRows(node parser.InsertRows) (rows []sqlwire.Resul
 						tmp := string(vt)
 						vals = append(vals, sqlwire.Datum{StringVal: &tmp})
 					case parser.ValArg:
-						return rows, fmt.Errorf("TODO(pmattis): unsupported node: %T", val)
+						tmp := string(vt)
+						var num int
+						if i, err := fmt.Sscanf(tmp, ":v%d", &num); err != nil || i != 1 {
+							panic(fmt.Sprintf("Unable to parse index from %s", tmp))
+						}
+						if num <= 0 || num > len(args) {
+							panic(fmt.Sprintf("Parameter %d is out of scope. Scope [0, %d]", num, len(args)))
+						}
+						vals = append(vals, args[num-1])
 					case parser.BytesVal:
 						tmp := string(vt)
 						vals = append(vals, sqlwire.Datum{StringVal: &tmp})

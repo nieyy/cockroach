@@ -325,6 +325,13 @@ CREATE TABLE t.kv (
 	if _, err := db.Exec(`INSERT INTO t.kv VALUES ("e", "f")`); err != nil {
 		t.Fatal(err)
 	}
+	// Pass parameters
+	if _, err := db.Exec(`INSERT INTO t.kv (k,v) VALUES ("g", ?), ("i", ?)`, "h", "j"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`INSERT INTO t.kv (k,v) VALUES ("m", ?), ("o", ?)`, "n"); !isError(err, "Incorrect number of parameters: 1; expected: 2") {
+		t.Fatal(err)
+	}
 
 	rows, err := db.Query("SELECT * FROM t.kv")
 	if err != nil {
@@ -336,6 +343,8 @@ CREATE TABLE t.kv (
 		{"a", "b"},
 		{"c", "d"},
 		{"e", "f"},
+		{"g", "h"},
+		{"i", "j"},
 	}
 	if !reflect.DeepEqual(expectedResults, results) {
 		t.Fatalf("expected %s, but got %s", expectedResults, results)
